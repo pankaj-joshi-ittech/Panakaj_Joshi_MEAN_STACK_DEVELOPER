@@ -1,0 +1,145 @@
+<p-toast></p-toast>
+<div class="container">
+    <div class="text-center pt-5">
+        <h3><b>Student Application</b></h3>
+    </div>
+    <div class="card">
+        <p-toolbar styleClass="p-mb-4">
+            <ng-template pTemplate="left">
+                <button pButton pRipple label="New" icon="pi pi-plus" class="p-button-success p-mr-2" (click)="openNew()"></button> 
+            </ng-template>
+        </p-toolbar>
+    
+        <p-table #dt [value]="students" [rows]="5" [paginator]="true" [globalFilterFields]="checkFilter"
+            [(selection)]="selectedProducts" [rowHover]="true" dataKey="id"
+            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" [showCurrentPageReport]="true">
+            <ng-template pTemplate="caption">
+                <div class="p-d-flex p-ai-center p-jc-between">
+                    <h5 class="p-m-0">Manage Students</h5>
+                    <span class="p-input-icon-left m-3">
+                        <i class="pi pi-search"></i>
+                        <input pInputText type="text" (input)="dt.filterGlobal($event.target.value, 'contains')" placeholder="Search..." />
+                    </span>
+                        <p-dropdown [options]="filterBy" (onChange)="handleFilter($event)" styleClass="p-column-filter" placeholder="Select a Status" [showClear]="false">
+                            <ng-template let-option pTemplate="item">
+                                <span [class]="'customer-badge status-' + option.value">{{option.label}}</span>
+                            </ng-template>
+                        </p-dropdown> 
+                  
+                </div>
+                
+            </ng-template>
+            <ng-template pTemplate="header">
+                <tr> 
+                    <th pSortableColumn="student_id.firstName">First Name <p-sortIcon field="student_id.firstName"></p-sortIcon></th> 
+                    <th pSortableColumn="student_id.lastName">Last Name <p-sortIcon field="student_id.lastName"></p-sortIcon></th>
+                    <th pSortableColumn="student_id.class">Class <p-sortIcon field="student_id.class"></p-sortIcon></th>
+                    <th pSortableColumn="subject_Name">Subject <p-sortIcon field="subject_Name"></p-sortIcon></th>
+                    <th pSortableColumn="marks">Marks <p-sortIcon field="marks"></p-sortIcon></th>
+                    <th></th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-student>
+                <tr>  
+                    <td>{{student.student_id.firstName}}</td> 
+                    <td>{{student.student_id.lastName}}</td>
+                    <td>{{student.student_id.class}}</td>  
+                    <td>{{student.subject_Name}}</td>
+                    <td>{{student.marks}}</td> 
+                    
+                    <td> 
+                        <button pButton pRipple icon="pi pi-pencil" class="p-button-rounded p-button-success p-mr-2" (click)="editStudent(student)"></button>
+                        <button pButton pRipple icon="pi pi-trash" class="p-button-rounded p-button-warning" (click)="deleteStudent(student.student_id._id)"></button>
+                    </td>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="summary">
+                <div class="p-d-flex p-ai-center p-jc-between">
+                    In total there are {{students ? students.length : 0 }} students.
+                </div>
+            </ng-template>
+        </p-table>
+    </div>
+    
+    <p-dialog [(visible)]="studentDialog" [style]="{width: '450px'}" header="Student Details" [modal]="true" styleClass="p-fluid">
+    <form [formGroup]="formGroup" (ngSubmit)="saveStudent()"> 
+
+            
+            <div class="p-field">
+                <label for="name">First Name</label>
+                <input type="text" pInputText id="name" formControlName="firstName" required autofocus />
+                <small class="p-error" *ngIf="submitted">First Name is required.</small>
+            </div>
+            <div class="p-field">
+                <label for="name">Last Name</label>
+                <input type="text" pInputText id="name" formControlName="lastName" required autofocus />
+                <small class="p-error" *ngIf="submitted">Last Name is required.</small>
+            </div>
+            <div class="p-field">
+                <label for="name">Class</label>
+                <input type="text" pInputText id="name" formControlName="class" required autofocus />
+                <small class="p-error" *ngIf="submitted">Class is required.</small>
+            </div>
+            <div *ngIf="addSubjectAndMark" class="form-group pt-4 pb-4">
+                <div class="row">
+                <div class="col-sm-6">
+                    <button pButton pRipple label="Add Subject" (click)="addSubjectAndMarks($event)" class="p-button-primary"></button>
+                </div> 
+                </div>
+            </div>    
+            <div class="row">
+                <div class="col-sm-5">
+                    <div formArrayName="subject_Names" class="p-field">
+                        <div *ngFor="let subject_Name of subject_Names.controls; let index = index; let last = last">   
+                          <div class="form-group d-flex add-skils pt-2" id="{{'subject_NamesOptGroup'+(index+1)}}">
+                            <input type="text" pInputText  class="form-control pollOptionBox"
+                             formControlName="{{index}}" 
+                             [ngClass]="{'is-invalid' : subjectNameSubmitted && hSubject_Names(index).errors}"
+                             placeholder="{{'Subject ' + (index+1)}}" id="{{'opt'+(index+1)}}" 
+                             > 
+                              <!-- <a (click)="removeLanguageOption((index+1))" class="text-danger"><i class="fas fa-minus-circle fa-3x ml-2"></i></a> -->
+                              
+                          </div>
+                        </div>
+                    </div> 
+                </div>
+                <div class="col-sm-5"> 
+                    <div formArrayName="marks" class="p-field">
+                        <div *ngFor="let mark of marks.controls; let index = index; let last = last">   
+                          <div class="form-group d-flex add-skils pt-2" id="{{'marksOptGroup'+(index+1)}}">
+                            <input type="text" pInputText  class="form-control pollOptionBox"
+                             formControlName="{{index}}" 
+                             [ngClass]="{'is-invalid' : marksSubmitted && hMarks(index).errors}"
+                             placeholder="{{'Marks ' + (index+1)}}" id="{{'opt'+(index+1)}}" 
+                             > 
+                             <button *ngIf="addSubjectAndMark" pButton pRipple icon="pi pi-trash" class="p-button-warning" (click)="removeSubjectMarks((index+1))"></button> 
+                              
+                          </div>
+                        </div>
+                    </div>  
+                </div> 
+            </div>   
+              
+            
+             
+            <div class="row pt-4">
+                <div class="col-sm-6">
+                    <button pButton pRipple label="Cancel" class="p-button-danger" (click)="hideDialog()"></button> 
+                </div>
+                <div class="col-sm-6"> 
+                    <ng-container *ngIf="addSubjectAndMark; else updateStudent">
+                        <button pButton pRipple label="Save" type="submit" class="btn btn-primary"></button>
+                    </ng-container>
+                    <ng-template #updateStudent>
+                        <button pButton pRipple label="Update" type="submit" class="btn btn-primary"></button>
+                    </ng-template> 
+                </div>
+            </div>
+            
+            
+    </form>   
+    </p-dialog>
+    
+</div>
+
+<p-confirmDialog [style]="{width: '450px'}"></p-confirmDialog>
